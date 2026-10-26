@@ -27,6 +27,16 @@ Windows ── PowerShell script (menu UI)
 
 ---
 
+## Demo
+
+<p align="center">
+  <img src="screenshots/demo.gif" alt="Walkthrough: menu, format picker, a real download completing, then a failed download showing the diagnosis and retry prompt" width="732">
+</p>
+
+A real session, captured frame by frame from the console — menu, format picker, a
+320 kbps download completing, then a deliberate failure so you can see the
+diagnosis and the retry prompt it produces.
+
 ## Screenshots
 
 | | |

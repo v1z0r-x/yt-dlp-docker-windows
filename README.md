@@ -1,6 +1,6 @@
 # YT-Downloader — Setup Guide
 
-A menu-driven PowerShell script that downloads YouTube audio/video (any *cough* *cough*) (using
+A menu-driven PowerShell script that downloads YouTube audio/video (any *cough* *cough*) using
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) running inside Docker. No Python,
 no ffmpeg, nothing installed on Windows itself — the entire engine lives in a
 daily-rebuilt container image, so when YouTube breaks things, one `docker pull`

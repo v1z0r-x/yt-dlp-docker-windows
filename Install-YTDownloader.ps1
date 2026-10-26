@@ -460,6 +460,11 @@ function Invoke-Download {
     # VPNs on a 403 sends them chasing an IP problem that does not exist.
     # The age check MUST precede the 429 check: 'Sign in to confirm your age' would
     # otherwise be swallowed by 'Sign in to confirm' and misreported as a bot wall.
+    # The 403 advice is YouTube-specific. There a 403 means a bad URL signature and the
+    # IP is irrelevant. Most other extractors are the opposite: Vimeo and friends really
+    # do 403 a datacenter/VPN exit, so those users must NOT be told to keep the VPN on.
+    $isYouTube = ($Url -match 'youtube\.com|youtu\.be|youtube-nocookie\.com') -or ($probe -match '\[youtube')
+
     $kind = 'unknown'
     if     ($probe -match 'HTTP Error 403|403: Forbidden|403 Forbidden')                  { $kind = '403' }
     elseif ($probe -match 'confirm your age|age-restricted|age_limit')                    { $kind = 'age' }
@@ -472,7 +477,8 @@ function Invoke-Download {
     elseif ($probe -match 'Cannot connect to the Docker daemon|error during connect')     { $kind = 'docker' }
 
     switch ($kind) {
-        '403'         { Write-Warn 'FAILED - 403 Forbidden (stale image)' }
+        '403'         { if ($isYouTube) { Write-Warn 'FAILED - 403 Forbidden (stale image)' }
+                        else            { Write-Warn 'FAILED - 403 Forbidden' } }
         'age'         { Write-Warn 'FAILED - age-gated video' }
         '429'         { Write-Warn 'FAILED - 429 rate limited (your IP)' }
         'unavailable' { Write-Warn 'FAILED - video not available to you' }
@@ -489,12 +495,21 @@ function Invoke-Download {
 
     switch ($kind) {
         '403' {
-            Write-Note '403 Forbidden - this is NOT your IP. Do not switch VPN.'
-            Write-Note 'YouTube rotated its player JS; this image can no longer sign URLs.'
             $age = Get-ImageAgeDays
-            if ($age -gt 7) { Write-Note ('Image last updated ' + [string]$age + ' days ago - that is almost certainly it.') }
-            Write-Note 'Switching exit node mid-download invalidates the signed URL and'
-            Write-Note 'causes MORE 403s. Rotating VPNs cannot fix this error.'
+            if ($isYouTube) {
+                Write-Note '403 Forbidden - on YouTube this is NOT your IP. Do not switch VPN.'
+                Write-Note 'YouTube rotated its player JS; this image can no longer sign URLs.'
+                if ($age -gt 7) { Write-Note ('Image last updated ' + [string]$age + ' days ago - that is almost certainly it.') }
+                Write-Note 'Switching exit node mid-download invalidates the signed URL and'
+                Write-Note 'causes MORE 403s. Rotating VPNs cannot fix this error.'
+            } else {
+                Write-Note '403 Forbidden from a non-YouTube site - two possible causes:'
+                Write-Note '  1. Stale image. Update it (option 3) and retry.'
+                if ($age -gt 7) { Write-Note ('     Yours was last updated ' + [string]$age + ' days ago.') }
+                Write-Note '  2. Unlike YouTube, plenty of sites DO block datacenter ranges,'
+                Write-Note '     so a VPN or proxy exit can genuinely be the cause here.'
+                Write-Note '     Worth retrying without it.'
+            }
         }
         'age' {
             Write-Note 'Age-gated video - needs cookies.txt from a logged-in throwaway account.'

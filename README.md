@@ -1,10 +1,23 @@
 # YT-Downloader — Setup Guide
 
-A menu-driven PowerShell script that downloads YouTube audio/video (any *cough* *cough*) using
+A menu-driven PowerShell script that downloads audio and video using
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) running inside Docker. No Python,
 no ffmpeg, nothing installed on Windows itself — the entire engine lives in a
-daily-rebuilt container image, so when YouTube breaks things, one `docker pull`
+daily-rebuilt container image, so when a site breaks things, one `docker pull`
 fixes it.
+
+**It is not YouTube-only** (any *cough* *cough*). The URL you paste goes straight
+to yt-dlp, which ships **1,755 extractors** in the current image — Vimeo,
+SoundCloud, Bandcamp, Twitch, archive.org, and most of the rest. Anything
+`yt-dlp --list-extractors` names will work:
+
+```powershell
+docker run --rm jauderho/yt-dlp:latest --list-extractors
+```
+
+YouTube is simply what the *failure diagnosis* is tuned for, since that's where
+the interesting failures live (see [403 and 429](#403-and-429-are-opposite-problems)).
+Everything else downloads exactly the same way.
 
 ```
 Windows ── PowerShell script (menu UI)
@@ -184,7 +197,8 @@ What's offered changes with the failure:
 |---|---|---|
 | `error during connect: ... dockerDesktopLinuxEngine` | Docker engine not running | run `yt` (auto-starts it) or launch Docker Desktop |
 | `400 Bad Request` / downloads suddenly fail everywhere | YouTube changed their API | menu option 3 (`docker pull`) |
-| **`HTTP Error 403: Forbidden`** | **your local image is stale** — YouTube rotated its player JS and this yt-dlp can no longer sign media URLs | **menu option 3 (`docker pull`).** *Not* an IP problem — see below |
+| **`HTTP Error 403: Forbidden`** *(YouTube)* | **your local image is stale** — YouTube rotated its player JS and this yt-dlp can no longer sign media URLs | **menu option 3 (`docker pull`).** *Not* an IP problem — see below |
+| `HTTP Error 403: Forbidden` *(any other site)* | either a stale image **or** a genuine IP block — many sites refuse datacenter ranges | update the image first; if that fails, retry **without** the VPN |
 | `Sign in to confirm you're not a bot` / `HTTP 429` | your IP *is* rate-limited or flagged | hop VPN exit node / hotspot, or wait 30–60 min **without retrying**; cookies as last resort |
 | `Sign in to confirm your age` | age-gated video | needs `cookies.txt` from a logged-in throwaway account; IP changes don't help |
 | `yt` not recognized | function not in `$PROFILE`, or profile blocked | step 4; check `Get-ExecutionPolicy` isn't `Restricted` |
@@ -225,6 +239,22 @@ been failing from byte one.
 "Rebuilt daily" is the upstream *intent* — in practice the `latest` tag can
 itself lag by a week, and `docker run` always serves your **local** cache, so
 an image you pulled two months ago stays two months old until you pull again.
+
+### …but only on YouTube
+
+Everything above is about YouTube, where a 403 means a bad signature and your IP
+is irrelevant. **Most other sites are the opposite.** Vimeo, for instance,
+refuses datacenter ranges outright:
+
+```
+ERROR: [vimeo] ...: Got HTTP Error 403 ... If you are using a data center IP
+or VPN/proxy, your IP may be blocked
+```
+
+That is a real IP block, and "don't switch your VPN" would be exactly the wrong
+advice. The script checks the URL and the extractor name, so a non-YouTube 403
+gets told that a VPN exit may genuinely be the cause and is worth dropping —
+while a YouTube 403 still gets told the opposite.
 
 ---
 

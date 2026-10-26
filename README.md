@@ -14,6 +14,21 @@ Windows ── PowerShell script (menu UI)
 
 ---
 
+## Screenshots
+
+| | |
+|:--:|:--:|
+| <img src="screenshots/01-main-menu.png" alt="Main menu, showing Docker status and how long ago the engine was updated" width="420"> | <img src="screenshots/02-quality-menu.png" alt="Format picker: audio or video, then bitrate" width="420"> |
+| **Main menu** — engine freshness is on the banner | **Format picker** — audio/video, then quality |
+| <img src="screenshots/03-download.png" alt="A download completing, with transcode, metadata and thumbnail steps" width="420"> | <img src="screenshots/04-failure-retry.png" alt="A failed download: boxed warning naming the cause, then a retry prompt" width="420"> |
+| **Downloading** — transcode, metadata, thumbnail | **A failure** — named cause, and only the retries that can actually work |
+
+Note the last one: the video is unavailable, so "Retry now" is not offered at all.
+For a stale-image 403 it would be offered *and* preselected. See
+[403 and 429 are opposite problems](#403-and-429-are-opposite-problems).
+
+---
+
 ## Prerequisites
 
 | Component | What for | Link |

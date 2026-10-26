@@ -432,10 +432,17 @@ function Invoke-Download {
         return
     }
 
-    # PS 5.1 writes its whole error-record decoration into the redirect target, so strip
-    # the stack trace / CategoryInfo / underline noise and leave yt-dlp's own words.
+    # Two kinds of noise get mixed into the captured stderr before yt-dlp's own words:
+    #   1. PS 5.1 writes its entire error-record decoration (stack trace, CategoryInfo,
+    #      the ~~~~ underline) into the redirect target.
+    #   2. Docker Desktop appends an unsolicited "What's next:" advert pointing at its
+    #      AI assistant, which arrives mojibaked in a console codepage and makes a
+    #      clean yt-dlp error look like the script itself broke.
+    # Neither is from yt-dlp, so neither belongs on screen or in the classifier.
+    $psNoise     = '^\s*\+|^At (line:|[A-Za-z]:\\)'
+    $dockerNoise = 'What.s next:|Debug this container error|docker ai |docker scout |View a summary of image vulnerabilities|Learn more at https://docs\.docker\.com'
     $clean = (($text -split '\r?\n') |
-        Where-Object { $_.Trim() -and $_ -notmatch '^\s*\+' -and $_ -notmatch '^At (line:|[A-Za-z]:\\)' } |
+        Where-Object { $_.Trim() -and $_ -notmatch $psNoise -and $_ -notmatch $dockerNoise } |
         ForEach-Object { ($_ -replace '^\s*docker\.exe\s*:\s*','').Trim() }) -join "`n"
 
     # Classify against yt-dlp's FATAL lines when there are any. yt-dlp retries past

@@ -1,0 +1,26 @@
+# NEVER commit cookies - they grant full access to a YouTube/Google session
+cookies.txt
+*.cookies
+cookies*.txt
+
+# downloads
+downloads/
+*.mp3
+*.mp4
+*.m4a
+*.webm
+*.opus
+*.part
+*.ytdl
+
+# local overrides
+*.local.ps1
+.env
+
+# OS / editor noise
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+.vscode/
+.idea/
